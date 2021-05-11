@@ -2,27 +2,16 @@
 //in chrome: http://localhost:8000/Documents/GitHub/perlyne/index.html
 
 function preload() {
+  runMatrixTests();
 }
 
 function setup() {
-  let matrix1 = new Matrix(2, 2);
-  matrix1.data[0][0] = 11;
-  matrix1.data[1][0] = 3;
-  matrix1.data[0][1] = 7;
-  matrix1.data[1][1] = 11;
-
-  let matrix2 = new Matrix(2, 3);
-  matrix2.data[0][0] = 8;
-  matrix2.data[1][0] = 0;
-  matrix2.data[2][0] = 1;
-  matrix2.data[0][1] = 0;
-  matrix2.data[1][1] = 3;
-  matrix2.data[2][1] = 5;
-
-  matrix1.print();
-  matrix2.print();
-
-  Matrix.multiply(matrix1, matrix2).print();
+  let nn = new NeuralNetwork(2, 1, 1);
+  nn.feedForward([0, 1]).print();
+  for (let i = 0; i < 1000; i++) {
+    nn.train([0, 1], [1]);
+  }
+  nn.feedForward([0, 1]).print();
   //createCanvas(w, h);
 }
 
