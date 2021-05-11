@@ -47,12 +47,19 @@ class Matrix {
     return transpose ? Matrix.transpose(matrix) : matrix;
   }
 
+  //arg: (matrix) original
+  //returns: matrix object copy of original matrix
+  static copy(matrix) {
+    let newMatrix = new Matrix(matrix.rows, matrix.cols);
+    newMatrix.data = matrix.data;
+    return newMatrix;
+  }
+
   //============================================================================
 
   //arg: (matrix) first matrix
   //     (matrix) second matrix
-  //returns: matrix object created from cross product of matrices
-  // FIX THIS LOL
+  //returns: matrix object created from product of matrices
   static product(m1, m2) {
     if (m1.cols == m2.rows) {
       let matrix = new Matrix(m1.rows, m2.cols);
