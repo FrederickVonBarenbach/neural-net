@@ -6,12 +6,24 @@ function preload() {
 }
 
 function setup() {
-  let nn = new NeuralNetwork(2, 1, 1);
-  nn.feedForward([0, 1]).print();
-  for (let i = 0; i < 1000; i++) {
-    nn.train([0, 1], [1]);
+
+  var trainingSet = [{input: [0, 0],
+                      label: [0]},
+                     {input: [0, 1],
+                      label: [1]},
+                     {input: [1, 0],
+                      label: [1]},
+                     {input: [1, 1],
+                      label: [0]}];
+
+  let nn = new NeuralNetwork(2, 3, 1);
+  for (let i = 0; i < 5000; i++) {
+    nn.trainBatch(trainingSet, 2);
   }
+  nn.feedForward([0, 0]).print();
   nn.feedForward([0, 1]).print();
+  nn.feedForward([1, 0]).print();
+  nn.feedForward([1, 1]).print();
   //createCanvas(w, h);
 }
 

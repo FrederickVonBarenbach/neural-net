@@ -1,5 +1,8 @@
 const randRange = 1;
-
+//NEXT STEPS:
+// - Maybe instead of returning this matrix in add() and stuff, you can make
+//   new matrix and then user can choose whether they want to replace the old
+//   one (since right now it's kind of like a += not just a +)
 class Matrix {
   //default_val can take the form of the string "random" to denote that the
   //elements of the matrix should be randomized, or it can take the form of a

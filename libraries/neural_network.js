@@ -45,9 +45,9 @@ class NeuralNetwork {
 
   //arg: (array) inputs
   //returns: vector corresponding to outputs
-  feedForward(inputs) {
-    if (inputs.length == this.layers[0].size()) {
-      this.layers[0] = Matrix.fromArray(inputs);
+  feedForward(input) {
+    if (input.length == this.layers[0].size()) {
+      this.layers[0] = Matrix.fromArray(input);
       for (let i = 0; i < this.layers.length-1; i++) {
         //z = w * a_prev + b
         let product = Matrix.product(this.weights[i], this.layers[i])
@@ -56,29 +56,16 @@ class NeuralNetwork {
         product.map(Functions.sigmoid);
         this.layers[i+1] = product;
       }
-      return this.layers[this.layers.length-1];
+      return Matrix.copy(this.layers[this.layers.length-1]);
     } else {
       throw new Error("(input error) incorrect number of inputs");
     }
   }
 
-  //arg: (array) inputs
-  //does: trains the neural network by adjusting weights
-  train(inputs, expected) {
-    let outputs = this.feedForward(inputs);
-
-    //Calculating dynamic (experimental) learning rate
-    //C = 1/2 * (y - a_output)^2
-    let cost = Matrix.fromArray(expected)
-                          .subtract(outputs)
-                          .map((x) => {return Math.pow(x, 2);})
-                          .multiply(0.5);
-    //l = 1000 * sqrt(C)
-    let learningRate = 1000*Math.pow(cost.data[0][0],0.5);
-
-    //Calculating output error
-    //dC = y - a_output
-    let dCost = outputs.subtract(Matrix.fromArray(expected));
+  /*//arg: (vector) delta cost vector
+  //     (number) learningRate
+  //does: completes the backpropagation process for all weights
+  #backpropagate(dCost, learningRate) {
     //z_out = w * a_prev + b
     let quantity = Matrix.product(this.weights[this.weights.length-1],
                                   this.layers[this.weights.length-1])
@@ -115,6 +102,83 @@ class NeuralNetwork {
                      .multiply(learningRate);
       //dC/db = l * (error)
       let db = Matrix.copy(errors[i]).multiply(learningRate);
+      this.weights[i].subtract(dw);
+      this.consts[i].subtract(db);
+    }
+  }*/
+
+  //arg: (array) set is an array of objects of the following form:
+  //                input: X, (where X is an array of input data)
+  //                label: Y  (where Y is an array of expected output data)
+  //     (number) number of runs before adjusting weights
+  //does: trains the network by adjusting weights after batchSize number of runs
+  trainBatch(set, batchSize) {
+    let dCost = new Matrix(this.layers[this.layers.length-1].rows,
+                           this.layers[this.layers.length-1].cols, 0);
+    for (let i = 0; i < batchSize; i++) {
+      let index = Math.floor(Math.random()*set.length);
+      this.train(set[index].input, set[index].label, batchSize);
+    }
+  }
+
+  //arg: (array) inputs
+  //does: trains the neural network by adjusting weights
+  train(input, label, batchSize = 1) {
+    let outputs = this.feedForward(input);
+
+    //Calculating output error
+    //dC = y - a_output
+    let dCost = outputs.subtract(Matrix.fromArray(label));
+
+    //z_out = w * a_prev + b
+    let quantity = Matrix.product(this.weights[this.weights.length-1],
+                                  this.layers[this.weights.length-1])
+                         .add(this.consts[this.weights.length-1]);
+    //NOTE: error is represented by the delta symbol
+    //error_out = dC ⊙ dSigmoid(z_out)
+    let outError = Matrix.hadamardProduct(dCost,
+                                          quantity.map(Functions.dSigmoid));
+
+    //Calculating dynamic [EXPERIMENTAL] learning rate
+    //C = 1/2 * (dC_avg)^2
+    let cost = Matrix.copy(dCost)
+                     .map((x) => {return Math.pow(x, 2);})
+                     .multiply(0.5);
+    //NOTE: The learning rate should not change depending on cost for non-batch
+    //      training since it reverses the process every time a different set is
+    //      inputted.
+    //l = 10 * C_avg + 0.01
+    let cost_avg = 0;
+    cost.iterate((x, y) => {cost_avg += cost.data[x][y]/cost.size();});
+    let learningRate = cost_avg*10 + 1;
+
+    //Initializing error array to hold error of each layer
+    //(adding output error to end)
+    let errors = new Array(this.weights.length);
+    errors[this.weights.length-1] = outError;
+
+    //Calculating hidden layer errors
+    for (let i = this.weights.length-2; i >= 0; i--) {
+      //dC = w_T * error_next
+      dCost = Matrix.product(Matrix.transpose(this.weights[i+1]),
+                            errors[i+1]);
+      //z = w * a_prev + b
+      quantity = Matrix.product(this.weights[i],
+                                this.layers[i])
+                       .add(this.consts[i]);
+      //error = dC ⊙ dSigmoid(z)
+      errors[i] = Matrix.hadamardProduct(dCost,
+                                         quantity.map(Functions.dSigmoid));
+    }
+
+    //Calculating and subtracting dC/dw and dC/db from previous weights
+    //and consts
+    for (let i = this.weights.length-1; i >= 0; i--) {
+      //dC/dw = l * (error * a_prev_T)
+      let dw = Matrix.product(errors[i], Matrix.transpose(this.layers[i]))
+                     .multiply(learningRate/batchSize);
+      //dC/db = l * (error)
+      let db = Matrix.copy(errors[i]).multiply(learningRate/batchSize);
       this.weights[i].subtract(dw);
       this.consts[i].subtract(db);
     }
