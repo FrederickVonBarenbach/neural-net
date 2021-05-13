@@ -20,25 +20,29 @@ class NeuralNetwork {
 
     //Set up inputs
     this.layers.push(new Matrix(inputs, 1, 1));
-    //Set up hidden layers
+    //Set up hidden layers (we are using He initialization of weights)
     if (Array.isArray(hiddenLayers)) {
       for (let i = 0; i < hiddenLayers.length; i++) {
-        this.layers.push(new Matrix(hiddenLayers[i], 1, 1));
-        this.consts.push(new Matrix(hiddenLayers[i], 1));
+        this.layers.push(new Matrix(hiddenLayers[i], 1));
+        this.consts.push(new Matrix(hiddenLayers[i], 1, 0));
         this.weights.push(new Matrix(this.layers[i+1].size(),
-                                     this.layers[i].size()));
+                                     this.layers[i].size())
+                                    .randomize(2, Math.sqrt(2/this.layers[i].size())));
       }
     } else if (hiddenLayers > 0) {
-      this.layers.push(new Matrix(hiddenLayers, 1, 1));
-      this.consts.push(new Matrix(hiddenLayers, 1));
+      this.layers.push(new Matrix(hiddenLayers, 1));
+      this.consts.push(new Matrix(hiddenLayers, 1, 0));
       this.weights.push(new Matrix(this.layers[1].size(),
-                                   this.layers[0].size()));
+                                   this.layers[0].size())
+                                  .randomize(2, Math.sqrt(2/this.layers[0].size())));
     }
     //Set up outputs
-    this.layers.push(new Matrix(outputs, 1, 1));
-    this.consts.push(new Matrix(outputs, 1));
-    this.weights.push(new Matrix(this.layers[this.layers.length-1].size(),
-                                 this.layers[this.layers.length-2].size()));
+    this.layers.push(new Matrix(outputs, 1));
+    this.consts.push(new Matrix(outputs, 1, 0));
+    let last = this.layers.length-1;
+    this.weights.push(new Matrix(this.layers[last].size(),
+                                 this.layers[last-1].size())
+                                .randomize(2, Math.sqrt(2/this.layers[last-1].size())));
   }
 
   //============================================================================
@@ -61,51 +65,6 @@ class NeuralNetwork {
       throw new Error("(input error) incorrect number of inputs");
     }
   }
-
-  /*//arg: (vector) delta cost vector
-  //     (number) learningRate
-  //does: completes the backpropagation process for all weights
-  #backpropagate(dCost, learningRate) {
-    //z_out = w * a_prev + b
-    let quantity = Matrix.product(this.weights[this.weights.length-1],
-                                  this.layers[this.weights.length-1])
-                         .add(this.consts[this.weights.length-1]);
-    //NOTE: error is represented by the delta symbol
-    //error_out = dC ⊙ dSigmoid(z_out)
-    let outError = Matrix.hadamardProduct(dCost,
-                                          quantity.map(Functions.dSigmoid));
-
-    //Initializing error array to hold error of each layer
-    //(adding output error to end)
-    let errors = new Array(this.weights.length);
-    errors[this.weights.length-1] = outError;
-
-    //Calculating hidden layer errors
-    for (let i = this.weights.length-2; i >= 0; i--) {
-      //dC = w_T * error_next
-      dCost = Matrix.product(Matrix.transpose(this.weights[i+1]),
-                            errors[i+1]);
-      //z = w * a_prev + b
-      quantity = Matrix.product(this.weights[i],
-                                this.layers[i])
-                       .add(this.consts[i]);
-      //error = dC ⊙ dSigmoid(z)
-      errors[i] = Matrix.hadamardProduct(dCost,
-                                         quantity.map(Functions.dSigmoid));
-    }
-
-    //Calculating and subtracting dC/dw and dC/db from previous weights
-    //and consts
-    for (let i = this.weights.length-1; i >= 0; i--) {
-      //dC/dw = l * (error * a_prev_T)
-      let dw = Matrix.product(errors[i], Matrix.transpose(this.layers[i]))
-                     .multiply(learningRate);
-      //dC/db = l * (error)
-      let db = Matrix.copy(errors[i]).multiply(learningRate);
-      this.weights[i].subtract(dw);
-      this.consts[i].subtract(db);
-    }
-  }*/
 
   //arg: (array) set is an array of objects of the following form:
   //                input: X, (where X is an array of input data)
@@ -139,7 +98,9 @@ class NeuralNetwork {
     let outError = Matrix.hadamardProduct(dCost,
                                           quantity.map(Functions.dSigmoid));
 
-    //Calculating dynamic [EXPERIMENTAL] learning rate
+    //Calculating [EXPERIMENTAL] adaptive learning rate which decreases as cost
+    //average is minimized. It is possible to try to add momentum to learning
+    //rate.
     //C = 1/2 * (dC_avg)^2
     let cost = Matrix.copy(dCost)
                      .map((x) => {return Math.pow(x, 2);})

@@ -1,4 +1,3 @@
-const randRange = 1;
 //NEXT STEPS:
 // - Maybe instead of returning this matrix in add() and stuff, you can make
 //   new matrix and then user can choose whether they want to replace the old
@@ -7,26 +6,16 @@ class Matrix {
   //default_val can take the form of the string "random" to denote that the
   //elements of the matrix should be randomized, or it can take the form of a
   //number in which case all elements of the matrix will become default_val
-  constructor(rows, cols, default_val = "random") {
+  constructor(rows, cols, default_val = 1) {
     this.rows = rows;
     this.cols = cols;
     this.data = [];
-
-    let random = false;
-    if (default_val == "random") {
-      random = true;
-      default_val = 0;
-    }
 
     for (let x = 0; x < this.cols; x++) {
       this.data[x] = [];
       for (let y = 0; y < this.rows; y++) {
         this.data[x][y] = default_val;
       }
-    }
-
-    if (random) {
-      this.randomize();
     }
   }
 
@@ -150,9 +139,9 @@ class Matrix {
   }
 
   //does: every element of matrix is randomized within randRange
-  randomize() {
+  randomize(randRange, normVal = 1) {
     this.iterate((x, y) => {
-      this.data[x][y] = Math.random()*(2*randRange) - randRange;
+      this.data[x][y] = (Math.random()*(2*randRange)-randRange)*normVal;
     });
     return this;
   }
