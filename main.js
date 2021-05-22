@@ -1,5 +1,5 @@
 //in console: php -S localhost:8000
-//in chrome: http://localhost:8000/Documents/GitHub/perlyne/index.html
+//in chrome: http://localhost:8000/Documents/GitHub/neural-net/index.html
 
 function preload() {
   runMatrixTests();
@@ -7,7 +7,7 @@ function preload() {
 
 function setup() {
 
-  var trainingSet = [{input: [0, 0],
+  /*var trainingSet = [{input: [0, 0],
                       label: [0]},
                      {input: [0, 1],
                       label: [1]},
@@ -23,7 +23,9 @@ function setup() {
   nn.feedForward([0, 0]).print();
   nn.feedForward([0, 1]).print();
   nn.feedForward([1, 0]).print();
-  nn.feedForward([1, 1]).print();
+  nn.feedForward([1, 1]).print();*/
+
+  beeProblem();
   //createCanvas(w, h);
 }
 

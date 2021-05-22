@@ -72,17 +72,15 @@ class NeuralNetwork {
   //     (number) number of runs before adjusting weights
   //does: trains the network by adjusting weights after batchSize number of runs
   trainBatch(set, batchSize) {
-    let dCost = new Matrix(this.layers[this.layers.length-1].rows,
-                           this.layers[this.layers.length-1].cols, 0);
     for (let i = 0; i < batchSize; i++) {
       let index = Math.floor(Math.random()*set.length);
-      this.train(set[index].input, set[index].label, batchSize);
+      this.backpropagate(set[index].input, set[index].label, batchSize);
     }
   }
 
   //arg: (array) inputs
-  //does: trains the neural network by adjusting weights
-  train(input, label, batchSize = 1) {
+  //does: backpropagates changes to weights throughout neural network
+  backpropagate(input, label, batchSize = 1) {
     let outputs = this.feedForward(input);
 
     //Calculating output error
