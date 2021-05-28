@@ -29,15 +29,25 @@ var rewards = [{state: [0, false], reward: 100}, {state: [10, false], reward: 10
 //     find points which have the greatest change in the function and then use
 //     then as the discrete states
 //     EX: https://zipcpu.com/img/dot-to-dot.png
+
+//arg: (array) state descriptors
+//returns: QPair from qTable that has the given state
 function getQPair(state) {
   for (let i = 0; i < qTable.length; i++) {
-    let match = true;
-    for (let e = 0; e < qTable[i].state.length; e++) {
-      if (qTable[i].state[e] != state[e]) match = false;
-    }
-    if (match) return qTable[i];
+    if (arrayEquals(qTable[i].state, state)) return qTable[i];
   }
   return undefined;
+}
+
+//arg: (array) array1
+//     (array) array2
+//returns: true if arrays have the same elements
+function arrayEquals(arr1, arr2) {
+  if (arr1.length != arr2.length) return false;
+  for (let e = 0; e < arr1.length; e++) {
+    if (arr1[e] != arr2[e]) return false;
+  }
+  return true;
 }
 
 function beeProblem() {
@@ -47,13 +57,13 @@ function beeProblem() {
     var bee = new Bee();
 
     for (let t = 0; t < timeLimit; t++) {
-      //Have a multi variable state and add a "getState" function
-      //let qPair = qTable.find(el => el.state == bee.state);
+      //Get qPair with given state
       let qPair = getQPair(bee.state);
       let index = 0;
-
       //if state hasn't been encountered yet, add it
       if (qPair == undefined) {
+        //ERROR: it creates the qPair with the state as a reference of the bee's
+        //       state, it should be instatiated as a copy of the array
         qPair = new QPair(bee.state, Bee.actions.length);
         qTable.push(qPair);
       }
@@ -66,14 +76,14 @@ function beeProblem() {
       }
 
       //do action
-      Bee.actions[index](bee);
+      Bee.actions[index](bee, false);
 
       //get next state and if should quit
       let quit = false;
       let reward = -1;
       //NOTE: can add a quit boolean which will make the loop end
       for (let i = 0; i < rewards.length; i++) {
-        if (bee.pos == rewards[i].pos) {
+        if (arrayEquals(bee.state, rewards[i].state)) {
           reward += rewards[i].reward;
           quit = true;
         }
@@ -81,10 +91,10 @@ function beeProblem() {
       qPair.actions[index] = (1-learningRate)*qPair.actions[index]+
                              learningRate*reward;
 
-      let nextQPair = qTable.find(el => el.state == bee.pos);
+      let nextQPair = getQPair(bee.state);
       //if state hasn't been encountered yet, add it
       if (nextQPair == undefined) {
-        nextQPair = new QPair(bee.pos, Bee.actions.length);
+        nextQPair = new QPair(bee.state, Bee.actions.length);
         qTable.push(nextQPair);
       }
 
@@ -104,13 +114,13 @@ function beeProblem() {
 function runBee() {
   var bee = new Bee();
   for (let t = 0; t < timeLimit; t++) {
-    let qPair = qTable.find(el => el.state == bee.pos);
+    let qPair = getQPair(bee.state);
     let index = 0;
     if (qPair == undefined) console.log("OH NO");
     index = qPair.getAction();
     Bee.actions[index](bee, true);
     for (let i = 0; i < rewards.length; i++) {
-      if (bee.pos == rewards[i].pos) return;
+      if (arrayEquals(bee.state, rewards[i].state)) return;
     }
   }
 }
@@ -119,7 +129,7 @@ class QPair {
   //arg: (array) state descriptors (i.e. [posX, posY, ...])
   //     (int)   number of possible actions
   constructor(state, numActions) {
-    this.state = state;
+    this.state = Array.from(state);
     this.actions = new Array(numActions);
     //elements are objects of type representing the reward {imm: X, fut: Y}
     for (let i = 0; i < this.actions.length; i++) {
