@@ -25,8 +25,35 @@ function setup() {
   nn.feedForward([1, 0]).print();
   nn.feedForward([1, 1]).print();*/
 
-  beeProblem();
+  //beeProblem();
+
+  var rewards = [{state: [0, false], reward: 100, func: function(bee) {
+    bee.state[1] = true;
+  }}, {state: [10, true], reward: 1000, func: function(bee) {
+    return "EXIT";
+  }}];
+
+  let ql = new QLearning(Bee, rewards);
+  ql.train(100);
   //createCanvas(w, h);
+}
+
+class Bee {
+  static actions = [Bee.wait, Bee.goLeft, Bee.goRight];
+  constructor() {
+    this.state = [5, false]; //position, hasHoney
+  }
+  static wait(bee, wordy = false) {
+    if (wordy) console.log("waiting at pos:     " + bee.state[0]);
+  }
+  static goLeft(bee, wordy = false) {
+    bee.state[0] -= 1;
+    if (wordy) console.log("going left to pos:  " + bee.state[0]);
+  }
+  static goRight(bee, wordy = false) {
+    bee.state[0] += 1;
+    if (wordy) console.log("going right to pos: " + bee.state[0]);
+  }
 }
 
 function draw() {
