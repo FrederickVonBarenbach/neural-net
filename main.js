@@ -2,7 +2,7 @@
 //in chrome: http://localhost:8000/Documents/GitHub/neural-net/index.html
 
 function preload() {
-  runMatrixTests();
+  //runMatrixTests();
 }
 
 function setup() {
@@ -34,7 +34,7 @@ function setup() {
   }}];
 
   let ql = new QLearning(Bee, rewards);
-  ql.train(100);
+  ql.train(10);
   //createCanvas(w, h);
 }
 

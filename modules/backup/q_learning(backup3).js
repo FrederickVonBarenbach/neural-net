@@ -68,17 +68,17 @@ class QLearning {
 
         //sometimes take random action (to explore)
         if (Math.random() < QLearning.randProb) {
-          //console.log("Chose random");
+          console.log("Chose random");
           index = Math.floor(Math.random()*this.Class.actions.length);
         } else {
-          /*console.log("Actions in state (%d): w %f, l %f, r %f",
+          console.log("Actions in state (%d): w %f, l %f, r %f",
                       qPair.state[0],
-                      qPair.actions[0], qPair.actions[1], qPair.actions[2]);*/
+                      qPair.actions[0], qPair.actions[1], qPair.actions[2]);
           index = qPair.getAction();
         }
 
         //do action
-        this.Class.actions[index](object);
+        this.Class.actions[index](object, true);
 
         //get next state and if should quit
         let reward = -1;
@@ -90,6 +90,11 @@ class QLearning {
             if (this.rewards[i].func(object) == "EXIT") quit = true;
           }
         }
+        //THE LEARNING RATE BASICALLY RESETS THE WAIT REWARD TO -1
+        //FIX BY FIGURING OUT THE NEXT STATE'S CONTRIBUTION FIRST AND
+        //THEN COMBINE IT IN THIS EQUATION
+        qPair.actions[index] = (1-QLearning.learningRate)*qPair.actions[index]+
+                               QLearning.learningRate*reward;
 
         let nextQPair = this.getQPair(object.state);
         //if state hasn't been encountered yet, add it
@@ -100,16 +105,17 @@ class QLearning {
 
         //update qPair's reward
         //NOTE: getting max reward might be expensive
-        qPair.updateReward(index, reward, nextQPair);
-        /*console.log("Next state (%d) rewards: w %f, l %f, r %f",
+        console.log("Next state (%d) rewards: w %f, l %f, r %f",
                     nextQPair.state[0],
-                    nextQPair.actions[0], nextQPair.actions[1], nextQPair.actions[2]);*/
+                    nextQPair.actions[0], nextQPair.actions[1], nextQPair.actions[2]);
+        let nextReward = nextQPair.getMaxReward();
+        qPair.updateReward(index, nextReward);
 
         if (quit) break;
       }
     }
 
-    this.run();
+    //this.run();
     console.log("Finished");
   }
 
@@ -170,7 +176,7 @@ class QPair {
   constructor(state, numActions) {
     this.state = Array.from(state);
     this.actions = new Array(numActions);
-    //elements are floats representing the qScore
+    //elements are objects of type representing the reward {imm: X, fut: Y}
     for (let i = 0; i < this.actions.length; i++) {
       this.actions[i] = 0;
     }
@@ -185,7 +191,6 @@ class QPair {
       if (this.actions[i] > this.actions[index]) {
         possibleActions = [];
         possibleActions.push(i);
-        index = i;
       } else if (this.actions[i] == this.actions[index]) {
         possibleActions.push(i);
       }
@@ -206,11 +211,10 @@ class QPair {
   //     (int) the reward associated with the actions possible in the next
   //           state (which is a result of the action taken)
   //does: updates the reward of the action taken
-  updateReward(index, reward, nextQPair) {
-    let nextReward = nextQPair.getMaxReward();
-    //Q(state,action)←(1−α)Q(state,action)+α(reward+γmax(Q(next state, actions)))
-    this.actions[index] = (1-QLearning.learningRate)*this.actions[index] +
-                          QLearning.learningRate*(reward +
-                                                  QLearning.decay*(nextReward));
+  updateReward(index, nextReward) {
+    //not multiplying reward by learning rate because it should get updated
+    //earlier (this.actions[index] is equal to Qscore_old + LR*reward)
+    this.actions[index] = this.actions[index]+
+                          QLearning.learningRate*QLearning.decay*(nextReward);
   }
 }
